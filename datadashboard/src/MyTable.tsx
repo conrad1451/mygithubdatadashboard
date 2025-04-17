@@ -15,26 +15,42 @@ import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import { Fragment } from 'react'; // Import Fragment
 
-interface Page {
-  id: string;
-  Name: string;
-  Area: string;
-  Source: string;
-  Link: string;
-  Type: string;
-  Tags: string[];
-  PageURL: string;
-  pageContent: string;
+// interface Page {
+//   id: string;
+//   Name: string;
+//   Area: string;
+//   Source: string;
+//   Link: string;
+//   Type: string;
+//   Tags: string[];
+//   PageURL: string;
+//   pageContent: string;
+// }
+
+interface RepoInfo {
+  name: string;
+  url: string;
+  description: string;
+  stars: string;
+  languagesURL: string; 
+  languagesContent: string;
 }
 
-function createCustomTableData(myID: string, Name: string, Area: string, Source: string, Link: string, Type: string, Tags: string[], PageURL: string, pageContent: string) {
-  return { myID, Name, Area, Source, Link, Type, Tags, PageURL, pageContent };
+// function createCustomTableData(myID: string, Name: string, Area: string, Source: string, Link: string, Type: string, Tags: string[], PageURL: string, pageContent: string) {
+//   return { myID, Name, Area, Source, Link, Type, Tags, PageURL, pageContent };
+// }
+
+// function mapReposToCustomTableData(pages: Page[]) {
+//   return pages.map((page) => createCustomTableData(page.id, page.Name, page.Area, page.Source, page.Link, page.Type, page.Tags, page.PageURL, page.pageContent));
+// }
+
+function createCustomTableData(name: string, url: string, description: string,  stars: string,  languagesURL: string, languagesContent:string) {
+  return {name, url, description, stars, languagesURL, languagesContent};
 }
 
-function mapPagesToCustomTableData(pages: Page[]) {
-  return pages.map((page) => createCustomTableData(page.id, page.Name, page.Area, page.Source, page.Link, page.Type, page.Tags, page.PageURL, page.pageContent));
+function mapReposToCustomTableData(repos: RepoInfo[]) {
+  return repos.map((repo) => createCustomTableData(repo.name, repo.url, repo.description, repo.stars, repo.languagesURL, repo.languagesContent));
 }
-
 
 const ElementChoice = (props: { textLine: string }) => {
   const text = props.textLine;
@@ -56,21 +72,15 @@ const ElementChoice = (props: { textLine: string }) => {
   }
 };
 
-const CustomTable = (props: { thePages: Page[]; setPages: React.Dispatch<React.SetStateAction<Page[]>> }) => {
-  const customTableData = mapPagesToCustomTableData(props.thePages);
-  const [tableData, setTableData] = useState(customTableData.filter((row) => row && row.Name && row.Name.trim() !== ''));
-  const [modalOpen, setModalOpen] = useState(false);   // CHQ: added by Gemini AI to enable modal appearance
-  const [modalContent, setModalContent] = useState('');   // CHQ: added by Gemini AI to enable setting modal content
-  const [filterEnabled, setFilterEnabled] = useState(false); // CHQ: added by Gemini AI to enable filter text field
-  const [filterText, setFilterText] = useState(''); // CHQ: added by Gemini AI to enable filter text field
+const CustomTable = (props: { theRepos: RepoInfo[]; setRepos: React.Dispatch<React.SetStateAction<RepoInfo[]>> }) => {
+  const customTableData = mapReposToCustomTableData(props.theRepos);
+  const [tableData, setTableData] = useState(customTableData.filter((row) => row && row.name && row.name.trim() !== ''));
+  const [modalOpen, setModalOpen] = useState(false);    
+  const [modalContent, setModalContent] = useState('');    
+  // const [filterEnabled, setFilterEnabled] = useState(false);  
+  // const [filterText, setFilterText] = useState('');  
 
-  // function concatenateArrayToString(arr: string[] | undefined | null): string {
-  //   if (Array.isArray(arr)) {
-  //     return arr.reduce((accumulator, currentValue) => accumulator + (currentValue + ' || '), '');
-  //   } else {
-  //     return '';
-  //   }
-  // }
+ 
 
   // function displayListInBulletPoints(arr:string[] | undefined | null): string
   function displayListInBulletPoints(arr:string[])
@@ -93,14 +103,24 @@ const CustomTable = (props: { thePages: Page[]; setPages: React.Dispatch<React.S
     )
   }
 
-  const handleButtonClick = async (rowId: string, index: number) => {
+  const handleButtonClick = async (myRow: RepoInfo, index: number) => {
+
+    let rowId = myRow.name
     try {
-      const response = await axios.get(`${import.meta.env.VITE_CAREER_SOURCE}/pagecontent/${rowId}`);
-      const pageText = response.data.pageText;
+      // const programmingLanguages = await axios.get(`${import.meta.env.VITE_CAREER_SOURCE}/pagecontent/${rowId}`);
+      const programmingLanguages = await axios.get(myRow.languagesURL);
+      // const languageList = programmingLanguages.data.pageText;
+      const languageList: string[] = programmingLanguages.data;
 
       const updatedTableData = tableData.map((row, i) => {
         if (i === index) {
-          return { ...row, pageContent: pageText };
+          
+          let concatList = "";
+          languageList.forEach((progLang) => {
+            concatList += progLang;
+            concatList += "";
+          });
+          return { ...row, languagesContent: concatList};
         }
         return row;
       });
@@ -108,13 +128,13 @@ const CustomTable = (props: { thePages: Page[]; setPages: React.Dispatch<React.S
       setTableData(updatedTableData);
 
       // Update the main pages state
-      const updatedPages = props.thePages.map((page) => {
-        if (page.id === rowId) {
+      const updatedPages = props.theRepos.map((page) => {
+        if (page.name === rowId) {
           return { ...page, pageContent: pageText };
         }
         return page;
       });
-      props.setPages(updatedPages);
+      props.setRepos(updatedPages);
     } catch (error) {
       console.error('Error fetching page content:', error);
     }
@@ -131,20 +151,20 @@ const CustomTable = (props: { thePages: Page[]; setPages: React.Dispatch<React.S
   };
 
     // CHQ: added by Gemini AI to enable text field which handles filtering
-  const handleFilter = () => {
-    const filteredData = customTableData.filter((row) =>
-      row.pageContent && row.pageContent.toLowerCase().includes(filterText.toLowerCase())
-    );
-    setTableData(filteredData);
-  };
+  // const handleFilter = () => {
+  //   const filteredData = customTableData.filter((row) =>
+  //     row.languagesContent && row.languagesContent.toLowerCase().includes(filterText.toLowerCase())
+  //   );
+  //   setTableData(filteredData);
+  // };
 
     // CHQ: added by Gemini AI to enable text field which handles filtering
-  const handleToggleFilter = () => {
-    setFilterEnabled(!filterEnabled);
-    if (!filterEnabled) {
-      setTableData(customTableData.filter((row) => row && row.Name && row.Name.trim() !== ''));
-    }
-  };
+  // const handleToggleFilter = () => {
+  //   setFilterEnabled(!filterEnabled);
+  //   if (!filterEnabled) {
+  //     setTableData(customTableData.filter((row) => row && row.name && row.name.trim() !== ''));
+  //   }
+  // };
 
   const renderModalContent0 = (content: string) => {
     const parts = content.split(/\[-n-\]/); // Split by the delimiter
@@ -247,7 +267,7 @@ Then, the parts array would be:
   return (
     <>
      {/*CHQ: added by Gemini AI*/} 
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+      {/* <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Typography>Filter Page Content:</Typography>
           <Switch checked={filterEnabled} onChange={handleToggleFilter} />
           {filterEnabled && (
@@ -263,12 +283,12 @@ Then, the parts array would be:
                   </Button>
               </>
           )}
-      </Box>
+      </Box> */}
       <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650, tableLayout: 'fixed' }} aria-label="simple table">
               <TableHead>
                   <TableRow>
-                      <TableCell align="left" width={'2.5%'}>#</TableCell>
+                      {/* <TableCell align="left" width={'2.5%'}>#</TableCell> */}
                       <TableCell align="left"
                           style={{
                               width: '15%',
@@ -277,79 +297,64 @@ Then, the parts array would be:
                       >
                           Name
                       </TableCell>
-                      <TableCell align="left" width={'5%'}>Area</TableCell>
-                      <TableCell align="left" width={'5%'}>Source</TableCell>
                       <TableCell className="link-column" align="left"
                           style={{
                               width: '5%',
                               overflowWrap: 'break-word',
                           }}
                       >
-                          Link
+                          Description
                       </TableCell>
-                      <TableCell align="left" width={'2.5%'}>Type</TableCell>
                       <TableCell className="tags-column" align="left"
                           style={{
                               width: '15%',
                               overflowWrap: 'break-word',
                           }}
                       >
-                          Tags</TableCell>
+                          URL</TableCell>
                       <TableCell className="notion-column" align="left"
                           style={{
                               width: '5%',
                               overflowWrap: 'break-word',
                           }}
                       >
-                          Notion Page URL</TableCell>
+                          Stars</TableCell>
                       <TableCell align="left" width={'5%'}>Fetch Page Content</TableCell>
                       <TableCell align="left" width={'5%'}>Page Content</TableCell>
                   </TableRow>
               </TableHead>
               <TableBody>
                   {tableData.map((row, index) =>
-                      row && row.Name ? (
-                          <TableRow key={row.Name} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                      row && row.name ? (
+                          <TableRow key={row.name} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                              {/* <TableCell component="th" scope="row">
+                                  {"index + 1"}
+                              </TableCell> */}
                               <TableCell component="th" scope="row">
-                                  {index + 1}
+                                  {row.name}
                               </TableCell>
-                              <TableCell component="th" scope="row">
-                                  {row.Name}
-                              </TableCell>
-                              <TableCell align="left">{row.Area}</TableCell>
-                              <TableCell align="left">{row.Source}</TableCell>
+                              <TableCell align="left">{row.description}</TableCell>
+
+                              {/* <TableCell align="left">{row.url}</TableCell> */}
                               <TableCell align="left"
                                   style={{
                                       overflowWrap: 'break-word',
                                   }}
                               >
-                                  <a href={row.Link} target="_blank" rel="noopener noreferrer">
-                                      {row.Link}
+                                  <a href={row.url} target="_blank" rel="noopener noreferrer">
+                                      {row.url}
                                   </a>
                               </TableCell>
-                              <TableCell align="left">{row.Type}</TableCell>
+                              <TableCell align="left">{row.stars}</TableCell>
+ 
                               <TableCell align="left">
-                                  {/* @ts-expect-error */}
-                                  {displayListInBulletPoints(row.Tags)}
-                              </TableCell>
-                              <TableCell align="left"
-                                  style={{
-                                      width: '128px',
-                                      overflowWrap: 'break-word',
-                                  }}
-                              >
-                                  <a href={row.PageURL} target="_blank" rel="noopener noreferrer">
-                                      {row.PageURL}
-                                  </a>
-                              </TableCell>
-                              <TableCell align="left">
-                                  <Button variant="contained" onClick={() => handleButtonClick(row.myID, index)}>
+                                  <Button variant="contained" onClick={() => handleButtonClick(row, index)}>
                                       Fetch Content
                                   </Button>
                               </TableCell>
                               <TableCell align="left">
-                                  {row.pageContent && (
-                                      <Button variant="outlined" onClick={() => handleOpenModal(row.pageContent)}>
+                                  {row.languagesContent && (
+                                      <Button variant="outlined" onClick={() => handleOpenModal(row.languagesContent)}>
                                           View Content
                                       </Button>
                                   )}
@@ -380,7 +385,8 @@ Then, the parts array would be:
                   Page Content
               </Typography>
               <Typography id="modal-modal-description" sx={{ mt: 2, flexGrow: 1 }}>
-                  {renderModalContent1(modalContent)} {/* Use the new function here */}
+                  {/* {renderModalContent1(modalContent)}  */}
+                  {modalContent}
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                   <Button variant="contained" onClick={handleCloseModal}>

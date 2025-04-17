@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 import { PieChart } from '@mui/x-charts/PieChart';
 
 import JobNotionPages from './apis/JobNotionPages'
+import DataDisplay from './apis/RepoInfo';
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 import MyFormContainer from './apis/NewSubmission'
@@ -30,7 +31,7 @@ function BasicPie() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const dataSource = import.meta.env.VITE_DATA_SOURCE;
    
-  const fetchData = async (index: number) => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
         const response = await axios.get(dataSource);
@@ -42,6 +43,9 @@ function BasicPie() {
         setIsLoading(false);
     }
   }
+  // useEffect(() => {
+  //   fetchData( );
+  // }, []);
 
 
   return (
@@ -109,8 +113,8 @@ function NavigationButtons() {
       <Button variant="contained" onClick={() => handleNavigate('/form')}>
         Go to form page
       </Button>
-      <Button variant="contained" onClick={() => handleNavigate('/careercontent')}>
-        Go to career content page
+      <Button variant="contained" onClick={() => handleNavigate('/repoData')}>
+        Go to repository data page
       </Button>
     </Box>
   );
@@ -124,7 +128,7 @@ function App() {
         <Route path="/" element={<NavigationButtons />} />
         <Route path="/orig" element={<OldApp/>} />
         <Route path="/form" element={  <MyFormContainer/>} />
-        <Route path="/careercontent" element={  <JobNotionPages/>} />
+        <Route path="/repoData" element={  <DataDisplay/>} />
         {/* <Route path="/orig" element={ <CustomTable/>} /> */}
       </Routes>
     </Router>    
